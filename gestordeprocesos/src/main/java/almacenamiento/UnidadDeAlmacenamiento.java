@@ -7,7 +7,7 @@ import java.util.List;
  * Unidad de Almacenamiento (simula el disco)
  * Guarda programas como texto ASM, sin parsear.
  *
- * @author dylan
+ * @author dylan y gadyr
  */
 public class UnidadDeAlmacenamiento {
 
