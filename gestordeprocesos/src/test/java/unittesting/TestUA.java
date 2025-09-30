@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class TestUA {
     public static void main(String[] args) {
-        UnidadDeAlmacenamiento ua = new UnidadDeAlmacenamiento();
+        UnidadDeAlmacenamiento ua = new UnidadDeAlmacenamiento(64, 45);
 
         // Simular programas en "disco" (no parseados aún)
         List<String> lineas1 = Arrays.asList(

@@ -51,6 +51,7 @@ public class UnidadDeAlmacenamiento {
 
         int memoriaLimite = tamañoTotal - memoriaVirtual;
         int indiceInicio = 0;
+        int longitudPrograma = 0;
         List<String> nombresValidos = new ArrayList<>();
         List<List<String>> programasValidos = new ArrayList<>();
 
@@ -66,15 +67,15 @@ public class UnidadDeAlmacenamiento {
                 System.out.println("No hay suficiente espacio para el programa " + nombres[i] + ", se omite.");
             }
         }
-
+        
         // Cargar programas válidos
-        indiceInicio = nombresValidos.size(); 
+        indiceInicio = nombresValidos.size();
         for (int i = 0; i < nombresValidos.size(); i++) {
             String progNombre = nombresValidos.get(i);
             List<String> lineas = programasValidos.get(i);
 
             // Guardar en índice: "nombre;posicionInicio"
-            almacenamiento.set(i, progNombre + ";" + indiceInicio);
+            almacenamiento.set(i, progNombre + ";" + indiceInicio + ";" + lineas.size());
 
             for (String linea : lineas) {
                 almacenamiento.set(indiceInicio, linea); // guarda ASM puro
@@ -83,6 +84,33 @@ public class UnidadDeAlmacenamiento {
         }
     }
 
+    /**
+     * Leer un programa desde el almacenamiento, buscándolo por nombre.
+     * 
+     * @param nombre nombre del programa
+     * @return lista de instrucciones ASM, o null si no existe
+     */
+    public List<String> leerPrograma(String nombre) {
+        for (int i = 0; i < tamañoTotal - memoriaVirtual; i++) {
+            String celda = almacenamiento.get(i);
+            if (celda != null && celda.startsWith(nombre + ";")) {
+                String[] parts = celda.split(";");   
+                int lineaIni = Integer.parseInt(parts[1]);
+                int inicio = Integer.parseInt(parts[1]);
+                int longitud = Integer.parseInt(parts[2]);
+                
+                List<String> programa = new ArrayList<>();
+
+                while (inicio < almacenamiento.size() && almacenamiento.get(inicio) != null && inicio < (lineaIni + longitud)) {
+                    programa.add(almacenamiento.get(inicio));
+                    inicio++;
+                }
+                return programa;
+            }
+        }
+        return null;
+    }    
+    
     /**
      * Muestra contenido de la unidad (debug).
      */
