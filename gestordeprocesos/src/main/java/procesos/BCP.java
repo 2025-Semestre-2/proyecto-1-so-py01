@@ -153,13 +153,14 @@ public class BCP {
     public boolean isEsperandoEntrada() { return esperandoEntrada; }
     public int getSiguiente() { return dirSiguienteBCP; }
     public int getDireccionBase() { return direccionBase; }
-    public int getTamaño() { return tamanio; }
+    public int getTamanio() { return tamanio; }
     public int getPrioridad() { return prioridad; }
     public String getNombreArchivo() { return nombreArchivo; }
     public int getPid() { return pid; }
     public String getInstruccionActual() { return instruccionActual; }
     public Stack<Integer> getPila() { return (Stack<Integer>) pila.clone(); }
 
+    public void setEstado(Estado estado) { this.estado = estado; }
     public void setAc(int ac) { this.ac = ac; }
     public void setAx(int ax) { this.ax = ax; }
     public void setBx(int bx) { this.bx = bx; }
