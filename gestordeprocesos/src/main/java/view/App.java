@@ -189,6 +189,7 @@ public class App extends javax.swing.JFrame {
 
         BCP.setColumns(20);
         BCP.setRows(5);
+        BCP.setEnabled(false);
         jScrollPane1.setViewportView(BCP);
 
         jLabel1.setText("BCP");
