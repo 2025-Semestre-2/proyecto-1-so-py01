@@ -115,6 +115,32 @@ public class BCP {
     public boolean direccionValida(int direccion) {
         return direccion >= direccionBase && direccion < direccionBase + tamanio;
     }
+    
+    /**
+    * Métodos para manipular la pila directamente
+    */
+   public void pushPila(int valor) {
+       if (pila.size() >= TAMANIO_MAXIMO_PILA) {
+           throw new RuntimeException("Desbordamiento de pila");
+       }
+       pila.push(valor);
+   }
+
+   public int popPila() {
+       if (pila.isEmpty()) {
+           throw new RuntimeException("Pila vacía");
+       }
+       return pila.pop();
+   }
+
+   public boolean pilaVacia() {
+       return pila.isEmpty();
+   }
+
+   public int tamanioPila() {
+       return pila.size();
+   }
+    
 
     // to string
     @Override
