@@ -42,13 +42,12 @@ public class Planificador {
 
     /** Asigna procesos listos a CPUs libres */
     public void despacharProcesos() {
-        for (int cpu = 0; cpu < NUM_CPUS; cpu++) {
-            if (procesosEnEjecucion[cpu] == null && !colaListos.isEmpty()) {
-                BCP proceso = colaListos.poll();
-                procesosEnEjecucion[cpu] = proceso;
-                proceso.setEstado(Estado.EJECUCION);
-                proceso.setCpuID(cpu);
-            }
+        // FCFS: Solo un proceso a la vez en ejecución
+        if (procesosEnEjecucion[0] == null && !colaListos.isEmpty()) {
+            BCP proceso = colaListos.poll();
+            procesosEnEjecucion[0] = proceso;
+            proceso.setEstado(Estado.EJECUCION);
+            proceso.setCpuID(0);
         }
     }
 
@@ -59,6 +58,9 @@ public class Planificador {
         if (proceso != null) {
             proceso.setEstado(Estado.FINALIZADO);
             procesosEnEjecucion[cpuID] = null;
+
+            colaListos.remove(proceso);
+            colaEspera.remove(proceso);
         }
     }
 

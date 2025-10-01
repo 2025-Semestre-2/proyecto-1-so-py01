@@ -2,6 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
+
 package sistema;
 
 import almacenamiento.UnidadDeAlmacenamiento;
@@ -23,18 +24,18 @@ import java.util.function.Consumer;
 
 /**
  * Gestor principal del sistema operativo simulado
- * Coordina CPUs, memoria, almacenamiento y planificador
+ * Coordina CPU, memoria, almacenamiento y planificador
  * @author gadyr
  */
 public class GestorSistema {
     
-    private static final int NUM_CPUS = 5;
+    private static final int MAX_PROCESOS_CARGADOS = 5;
     
     // Componentes del sistema
     private UnidadDeAlmacenamiento almacenamiento;
     private MemoriaPrincipal memoria;
     private Planificador planificador;
-    private CPU[] cpus;
+    private CPU cpu; // CPU único que maneja hasta 5 procesos (FCFS)
     
     // Callbacks para actualizar GUI
     private Consumer<String> consolaCallback;
@@ -71,13 +72,10 @@ public class GestorSistema {
         this.planificador = new Planificador();
         this.estadisticas = new ArrayList<>();
         
-        // Crear CPUs
-        this.cpus = new CPU[NUM_CPUS];
-        for (int i = 0; i < NUM_CPUS; i++) {
-            cpus[i] = new CPU(i, memoria, planificador, almacenamiento);
-        }
+        // Crear CPU único
+        this.cpu = new CPU(memoria, planificador, almacenamiento);
         
-        log("Sistema inicializado correctamente");
+        log("Sistema inicializado: 1 CPU con capacidad para " + MAX_PROCESOS_CARGADOS + " procesos (FCFS)");
     }
     
     /**
@@ -134,7 +132,7 @@ public class GestorSistema {
                 cargarProcesoEnMemoria(nombre);
             }
             
-            // Despachar procesos a CPUs
+            // Despachar procesos
             planificador.despacharProcesos();
             
             log("Todos los procesos listos para ejecutar");
@@ -176,7 +174,7 @@ public class GestorSistema {
     
     /**
      * Ejecuta UN ciclo de reloj (1 segundo simulado)
-     * Cada CPU con proceso asignado ejecuta una instrucción
+     * El CPU ejecuta el primer proceso (FCFS)
      */
     public void ejecutarPasoAPaso() {
         if (todosProcesosFinalizado()) {
@@ -185,15 +183,13 @@ public class GestorSistema {
             return;
         }
         
-        log("=== Ciclo de ejecución ===");
+        log("=== Ciclo de ejecución (FCFS) ===");
         
-        // Intentar despachar procesos a CPUs libres
+        // Intentar despachar procesos a slots libres
         planificador.despacharProcesos();
         
-        // Cada CPU ejecuta un ciclo
-        for (CPU cpu : cpus) {
-            cpu.ejecutarCiclo();
-        }
+        // El CPU ejecuta SOLO el primer proceso (FCFS)
+        cpu.ejecutarCiclo();
         
         // Actualizar GUI si hay callback
         if (actualizarGUICallback != null) {
@@ -249,16 +245,8 @@ public class GestorSistema {
     /**
      * Procesa entrada de teclado para un proceso en espera
      */
-    public void procesarEntradaTeclado(int cpuID, int valor) {
-        if (cpuID >= 0 && cpuID < NUM_CPUS) {
-            BCP proceso = planificador.getProcesoCPU(cpuID);
-            if (proceso != null && proceso.isEsperandoEntrada()) {
-                proceso.setDx(valor);
-                proceso.setEsperandoEntrada(false);
-                planificador.moverEsperaAListos(proceso);
-                log("CPU" + cpuID + " - Proceso " + proceso.getPid() + " recibió entrada: " + valor);
-            }
-        }
+    public void procesarEntradaTeclado(int cpuSlot, int valor) {
+        cpu.procesarEntradaTeclado(cpuSlot, valor);
     }
     
     /**
@@ -283,9 +271,10 @@ public class GestorSistema {
      * Verifica si todos los procesos han finalizado
      */
     private boolean todosProcesosFinalizado() {
-        // Verificar CPUs
-        for (CPU cpu : cpus) {
-            if (planificador.getProcesoCPU(cpu.getCpuID()) != null) {
+        // Verificar slots del CPU
+        BCP[] procesosEnEjecucion = planificador.getProcesosEnEjecucion();
+        for (BCP proceso : procesosEnEjecucion) {
+            if (proceso != null) {
                 return false;
             }
         }
@@ -304,8 +293,9 @@ public class GestorSistema {
         estadisticas.clear();
         
         // Recolectar estadísticas de todos los procesos finalizados
-        for (int i = 0; i < NUM_CPUS; i++) {
-            BCP proceso = planificador.getProcesoCPU(i);
+        BCP[] procesosEnSlots = planificador.getProcesosEnEjecucion();
+        for (int i = 0; i < procesosEnSlots.length; i++) {
+            BCP proceso = procesosEnSlots[i];
             if (proceso != null && proceso.getEstado() == Estado.FINALIZADO) {
                 EstadisticaProceso est = new EstadisticaProceso(
                     proceso.getNombreArchivo(),
@@ -313,7 +303,7 @@ public class GestorSistema {
                     proceso.getTiempoInicio(),
                     proceso.getTiempoFinalizacion(),
                     proceso.getTiempoEmpleado(),
-                    proceso.getCpuId()
+                    i
                 );
                 estadisticas.add(est);
             }
@@ -340,12 +330,6 @@ public class GestorSistema {
      * Genera estadísticas de todos los procesos (incluyendo finalizados previamente)
      */
     public List<EstadisticaProceso> generarEstadisticasCompletas() {
-        List<EstadisticaProceso> stats = new ArrayList<>();
-        
-        // Buscar todos los BCPs en memoria (sección SO)
-        // Nota: esto es una aproximación, idealmente deberías mantener una lista
-        // de todos los procesos creados
-        
         return new ArrayList<>(estadisticas);
     }
     
@@ -395,8 +379,8 @@ public class GestorSistema {
         return new ArrayList<>(planificador.getColaEspera());
     }
     
-    public BCP getProcesoCPU(int cpuID) {
-        return planificador.getProcesoCPU(cpuID);
+    public BCP getProcesoCPU(int slot) {
+        return planificador.getProcesoCPU(slot);
     }
     
     public List<EstadisticaProceso> getEstadisticas() {
@@ -419,26 +403,22 @@ public class GestorSistema {
         return ejecutando;
     }
     
-    public CPU[] getCPUs() {
-        return cpus;
+    public CPU getCPU() {
+        return cpu;
     }
     
     // ========== SETTERS PARA CALLBACKS ==========
     
     public void setConsolaCallback(Consumer<String> callback) {
         this.consolaCallback = callback;
-        // Propagar a todos los CPUs
-        for (CPU cpu : cpus) {
-            cpu.setConsolaCallback(callback);
-        }
+        // Propagar al CPU
+        cpu.setConsolaCallback(callback);
     }
     
     public void setPantallaCallback(Consumer<String> callback) {
         this.pantallaCallback = callback;
-        // Propagar a todos los CPUs
-        for (CPU cpu : cpus) {
-            cpu.setPantallaCallback(callback);
-        }
+        // Propagar al CPU
+        cpu.setPantallaCallback(callback);
     }
     
     public void setActualizarGUICallback(Runnable callback) {

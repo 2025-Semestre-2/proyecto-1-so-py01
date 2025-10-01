@@ -5,6 +5,7 @@
 package cpu;
 
 import almacenamiento.UnidadDeAlmacenamiento;
+import instrucciones.IR;
 import instrucciones.Instruccion;
 import instrucciones.Opcode;
 import memoria.MemoriaPrincipal;
@@ -15,41 +16,47 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * CPU que ejecuta instrucciones de los procesos
+ * CPU único que ejecuta instrucciones de los procesos usando FCFS
+ * Puede mantener hasta 5 BCPs pero ejecuta uno a la vez
  * @author gadyr
  */
 public class CPU {
     
-    private final int cpuID;
+    private static final int MAX_PROCESOS_SIMULTANEOS = 5;
+    
     private final MemoriaPrincipal memoria;
     private final Planificador planificador;
     private final UnidadDeAlmacenamiento almacenamiento;
     
+    // 5 Registros IR, uno por cada proceso que puede estar cargado
+    private IR[] registrosIR;
+    
+    // Callbacks para actualizar la interfaz
     private Consumer<String> consolaCallback;
     private Consumer<String> pantallaCallback;
     
-    private boolean esperandoEntrada = false;
-    private int valorEntrada = 0;
-    
+    // Bandera de comparación (para JE/JNE)
     private boolean flagIgualdad = false;
     
-    public CPU(int cpuID, MemoriaPrincipal memoria, Planificador planificador, 
+    public CPU(MemoriaPrincipal memoria, Planificador planificador, 
                UnidadDeAlmacenamiento almacenamiento) {
-        this.cpuID = cpuID;
         this.memoria = memoria;
         this.planificador = planificador;
         this.almacenamiento = almacenamiento;
+        this.registrosIR = new IR[MAX_PROCESOS_SIMULTANEOS];
     }
     
     /**
-     * Ejecuta un ciclo de instrucción para el proceso asignado a este CPU
-     * @return true si ejecutó algo, false si el CPU está libre o proceso terminado
+     * Ejecuta un ciclo de instrucción siguiendo FCFS
+     * Solo ejecuta el primer proceso en la cola de listos
+     * @return true si ejecutó algo, false si no hay procesos
      */
     public boolean ejecutarCiclo() {
-        BCP proceso = planificador.getProcesoCPU(cpuID);
+        // Obtener el primer proceso en ejecución (FCFS)
+        BCP proceso = obtenerProcesoActual();
         
         if (proceso == null) {
-            return false; // CPU libre
+            return false; // No hay proceso para ejecutar
         }
         
         // Si está esperando entrada, no ejecutar
@@ -61,6 +68,13 @@ public class CPU {
             // Fetch: obtener instrucción
             int pc = proceso.getProgramCounter();
             Instruccion instruccion = memoria.leerInstruccionUsuario(pc);
+            
+            // Cargar en IR correspondiente
+            int slot = obtenerSlotProceso(proceso);
+            if (slot >= 0) {
+                registrosIR[slot] = new IR(instruccion);
+            }
+            
             proceso.setInstruccionActual(instruccion.toString());
             
             // Decode & Execute: ejecutar instrucción
@@ -76,9 +90,35 @@ public class CPU {
         } catch (Exception e) {
             // Error en ejecución
             log("Error ejecutando proceso " + proceso.getPid() + ": " + e.getMessage());
-            planificador.finalizarProceso(cpuID);
+            planificador.finalizarProceso(proceso.getCpuId());
             return false;
         }
+    }
+    
+    /**
+     * Obtiene el proceso actual en ejecución (primer proceso de los 5 slots)
+     */
+    private BCP obtenerProcesoActual() {
+        BCP[] procesos = planificador.getProcesosEnEjecucion();
+        for (BCP proceso : procesos) {
+            if (proceso != null && proceso.getEstado() == Estado.EJECUCION) {
+                return proceso;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Obtiene el slot (0-4) donde está cargado un proceso
+     */
+    private int obtenerSlotProceso(BCP proceso) {
+        BCP[] procesos = planificador.getProcesosEnEjecucion();
+        for (int i = 0; i < procesos.length; i++) {
+            if (procesos[i] != null && procesos[i].getPid() == proceso.getPid()) {
+                return i;
+            }
+        }
+        return -1;
     }
     
     /**
@@ -142,7 +182,7 @@ public class CPU {
         }
     }
     
-    ////////////Instrucciones////////////////
+    // ========== IMPLEMENTACIÓN DE INSTRUCCIONES ==========
     
     private void ejecutarLOAD(BCP bcp, String reg) {
         int valor = leerRegistro(bcp, reg);
@@ -194,7 +234,7 @@ public class CPU {
         switch (codigo.toUpperCase()) {
             case "20H":
                 // Finalizar programa
-                planificador.finalizarProceso(cpuID);
+                planificador.finalizarProceso(bcp.getCpuId());
                 bcp.cambiarEstado(Estado.FINALIZADO);
                 log("Proceso " + bcp.getPid() + " finalizado");
                 break;
@@ -208,12 +248,13 @@ public class CPU {
             case "09H":
                 // Entrada de teclado (guardar en DX)
                 bcp.setEsperandoEntrada(true);
-                planificador.liberarCPU(cpuID);
+                planificador.agregarProcesoEspera(bcp);
+                planificador.liberarCPU(bcp.getCpuId());
                 log("Proceso " + bcp.getPid() + " esperando entrada de teclado");
                 break;
                 
             case "21H":
-                // opcional no implentada aun
+                // Manejo de archivos (OPCIONAL)
                 ejecutarManejoArchivos(bcp);
                 break;
                 
@@ -254,28 +295,26 @@ public class CPU {
     private void ejecutarPARAM(BCP bcp, List<String> valores) {
         for (int i = valores.size() - 1; i >= 0; i--) {
             int valor = Integer.parseInt(valores.get(i));
-            bcp.pushPila(valor);  // <-- Cambio aquí
+            bcp.pushPila(valor);
         }
     }
     
     private void ejecutarPUSH(BCP bcp, String reg) {
         int valor = leerRegistro(bcp, reg);
-        bcp.pushPila(valor);  // <-- Cambio aquí
+        bcp.pushPila(valor);
     }
     
     private void ejecutarPOP(BCP bcp, String reg) {
-        int valor = bcp.popPila();  // <-- Cambio aquí
+        int valor = bcp.popPila();
         escribirRegistro(bcp, reg, valor);
     }
     
     private void ejecutarManejoArchivos(BCP bcp) {
-        // OPCIONAL: implementar si quieren los 5 puntos extra
         log("Manejo de archivos no implementado (INT 21H)");
     }
     
+    // ========== UTILIDADES ==========
     
-    
-    //////////////////// leer, escribir//////////////////////    
     private int leerRegistro(BCP bcp, String reg) {
         switch (reg.toUpperCase()) {
             case "AC": return bcp.getAc();
@@ -313,9 +352,9 @@ public class CPU {
     
     private void log(String mensaje) {
         if (consolaCallback != null) {
-            consolaCallback.accept("[CPU" + cpuID + "] " + mensaje);
+            consolaCallback.accept("[CPU] " + mensaje);
         }
-        System.out.println("[CPU" + cpuID + "] " + mensaje);
+        System.out.println("[CPU] " + mensaje);
     }
     
     private void imprimirPantalla(String texto) {
@@ -325,19 +364,43 @@ public class CPU {
     }
     
     /**
-     * Procesa la entrada del teclado para un proceso en espera
+     * Procesa la entrada del teclado para el proceso en espera
      */
-    public void procesarEntradaTeclado(int valor) {
-        BCP proceso = planificador.getProcesoCPU(cpuID);
+    public void procesarEntradaTeclado(int cpuSlot, int valor) {
+        // Buscar primero en el slot
+        BCP proceso = planificador.getProcesoCPU(cpuSlot);
+
+        // Si no está en el slot, buscar en cola de espera
+        if (proceso == null) {
+            for (BCP p : planificador.getColaEspera()) {
+                if (p != null && p.isEsperandoEntrada() && p.getCpuId() == cpuSlot) {
+                    proceso = p;
+                    break;
+                }
+            }
+        }
+
         if (proceso != null && proceso.isEsperandoEntrada()) {
             proceso.setDx(valor);
             proceso.setEsperandoEntrada(false);
             planificador.moverEsperaAListos(proceso);
             log("Proceso " + proceso.getPid() + " recibió entrada: " + valor);
+        } else {
+            log("ERROR: No se encontró proceso esperando entrada en slot " + cpuSlot);
         }
     }
     
-    // setters de callBacks
+    /**
+     * Obtiene el IR de un slot específico
+     */
+    public IR getIR(int slot) {
+        if (slot >= 0 && slot < MAX_PROCESOS_SIMULTANEOS) {
+            return registrosIR[slot];
+        }
+        return null;
+    }
+    
+    // ========== SETTERS PARA CALLBACKS ==========
     
     public void setConsolaCallback(Consumer<String> callback) {
         this.consolaCallback = callback;
@@ -345,9 +408,5 @@ public class CPU {
     
     public void setPantallaCallback(Consumer<String> callback) {
         this.pantallaCallback = callback;
-    }
-    
-    public int getCpuID() {
-        return cpuID;
     }
 }

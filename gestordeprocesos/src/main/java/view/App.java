@@ -9,6 +9,9 @@ import java.util.List;
 import procesos.BCP;
 import sistema.EstadisticaProceso;
 import sistema.GestorSistema;
+import procesos.Estado;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  *
@@ -42,7 +45,7 @@ public class App extends javax.swing.JFrame {
         });
 
         gestor.setPantallaCallback(texto -> {
-            pantalla.append("HOLA AMIGO");
+            pantalla.append(texto);
             pantalla.setCaretPosition(pantalla.getDocument().getLength());
         });
         
@@ -117,69 +120,126 @@ public class App extends javax.swing.JFrame {
    /**
     * Actualiza la tabla de estados de procesos
     */
-   private void actualizarTablaProcesos() { javax.swing.table.DefaultTableModel modelo = (javax.swing.table.DefaultTableModel) ProcessStatesTable1.getModel();
+    private void actualizarTablaProcesos() {
+        javax.swing.table.DefaultTableModel modelo = 
+            (javax.swing.table.DefaultTableModel) ProcessStatesTable1.getModel();
 
-       // Limpiar tabla
-       modelo.setRowCount(0);
+        // Limpiar tabla
+        modelo.setRowCount(0);
 
-       // Procesos en ejecución
-       BCP[] enEjecucion = gestor.getProcesosEnEjecucion();
-       for (int i = 0; i < enEjecucion.length; i++) {
-           if (enEjecucion[i] != null) {
-               BCP bcp = enEjecucion[i];
-               modelo.addRow(new Object[]{
-                   bcp.getNombreArchivo() + " (PID:" + bcp.getPid() + ")",
-                   "EJECUCION - CPU" + i
-               });
-           }
-       }
+        // Lista para evitar duplicados
+        java.util.Set<Integer> pidsYaMostrados = new java.util.HashSet<>();
 
-       // Cola de listos
-       List<BCP> listos = gestor.getColaListos();
-       for (BCP bcp : listos) {
-           modelo.addRow(new Object[]{
-               bcp.getNombreArchivo() + " (PID:" + bcp.getPid() + ")",
-               "PREPARADO"
-           });
-       }
+        // Procesos en slots (solo si NO están en cola de espera)
+        BCP[] enEjecucion = gestor.getProcesosEnEjecucion();
+        for (int i = 0; i < enEjecucion.length; i++) {
+            if (enEjecucion[i] != null) {
+                BCP bcp = enEjecucion[i];
 
-       // Cola de espera
-       List<BCP> espera = gestor.getColaEspera();
-       for (BCP bcp : espera) {
-           modelo.addRow(new Object[]{
-               bcp.getNombreArchivo() + " (PID:" + bcp.getPid() + ")",
-               "ESPERA"
-           });
-       }
-   }
+                // Solo mostrar si NO está en estado ESPERA (esos se muestran después)
+                if (bcp.getEstado() != procesos.Estado.ESPERA) {
+                    String estado = bcp.getEstado() == procesos.Estado.EJECUCION ? 
+                        "EJECUCION (CPU)" : "CARGADO - Slot " + i;
+                    modelo.addRow(new Object[]{
+                        bcp.getNombreArchivo() + " (PID:" + bcp.getPid() + ")",
+                        estado
+                    });
+                    pidsYaMostrados.add(bcp.getPid());
+                }
+            }
+        }
+
+        // Cola de listos
+        List<BCP> listos = gestor.getColaListos();
+        for (BCP bcp : listos) {
+            if (!pidsYaMostrados.contains(bcp.getPid())) {
+                modelo.addRow(new Object[]{
+                    bcp.getNombreArchivo() + " (PID:" + bcp.getPid() + ")",
+                    "PREPARADO"
+                });
+                pidsYaMostrados.add(bcp.getPid());
+            }
+        }
+
+        // Cola de espera
+        List<BCP> espera = gestor.getColaEspera();
+        for (BCP bcp : espera) {
+            if (!pidsYaMostrados.contains(bcp.getPid())) {
+                modelo.addRow(new Object[]{
+                    bcp.getNombreArchivo() + " (PID:" + bcp.getPid() + ")",
+                    "ESPERA (E/S)"
+                });
+                pidsYaMostrados.add(bcp.getPid());
+            }
+        }
+    }
 
    /**
     * Actualiza el área de texto del BCP actual
     */
-   private void actualizarBCP() {
-       StringBuilder sb = new StringBuilder();
-       sb.append("=== BCPs EN EJECUCIÓN ===\n\n");
+    private void actualizarBCP() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("═══ ESTADO DEL CPU (FCFS) ═══\n\n");
 
-       BCP[] enEjecucion = gestor.getProcesosEnEjecucion();
-       boolean hayProcesos = false;
+        BCP[] slots = gestor.getProcesosEnEjecucion();
+        boolean hayProcesos = false;
+        BCP procesoActual = null;
 
-       for (int i = 0; i < enEjecucion.length; i++) {
-           if (enEjecucion[i] != null) {
-               hayProcesos = true;
-               BCP bcp = enEjecucion[i];
-               sb.append("CPU ").append(i).append(":\n");
-               sb.append(bcp.toStringCompleto()).append("\n");
-               sb.append("Instrucción actual: ").append(bcp.getInstruccionActual()).append("\n");
-               sb.append("\n");
-           }
-       }
+        // Encontrar el proceso en ejecución
+        for (int i = 0; i < slots.length; i++) {
+            if (slots[i] != null) {
+                hayProcesos = true;
+                BCP bcp = slots[i];
 
-       if (!hayProcesos) {
-           sb.append("No hay procesos en ejecución\n");
-       }
+                if (bcp.getEstado() == procesos.Estado.EJECUCION) {
+                    procesoActual = bcp;
+                    sb.append(">>> EJECUTANDO AHORA <<<\n");
+                    sb.append("─────────────────────────\n");
+                    sb.append("Slot: ").append(i).append("\n");
+                    sb.append("Proceso: ").append(bcp.getNombreArchivo()).append("\n");
+                    sb.append("PID: ").append(bcp.getPid()).append("\n");
+                    sb.append("Estado: ").append(bcp.getEstado()).append("\n");
+                    sb.append("PC: ").append(bcp.getProgramCounter()).append("\n");
+                    sb.append("Instrucción: ").append(bcp.getInstruccionActual()).append("\n\n");
 
-       BCP.setText(sb.toString());
-   }
+                    sb.append("REGISTROS:\n");
+                    sb.append("  AC = ").append(bcp.getAc()).append("\n");
+                    sb.append("  AX = ").append(bcp.getAx()).append("\n");
+                    sb.append("  BX = ").append(bcp.getBx()).append("\n");
+                    sb.append("  CX = ").append(bcp.getCx()).append("\n");
+                    sb.append("  DX = ").append(bcp.getDx()).append("\n\n");
+
+//                    sb.append("PILA: ").append(bcp.getPila()).append("\n");
+//                    sb.append("Tamaño: ").append(bcp.getPila().size()).append("/5\n\n");
+//
+//                    sb.append("MEMORIA:\n");
+//                    sb.append("  Base: ").append(bcp.getDireccionBase()).append("\n");
+//                    sb.append("  Tamaño: ").append(bcp.getTamanio()).append("\n");
+//                    sb.append("  Prioridad: ").append(bcp.getPrioridad()).append("\n\n");
+                }
+            }
+        }
+
+        // Mostrar otros procesos cargados
+        if (hayProcesos) {
+            sb.append("─── Otros procesos en memoria ───\n");
+            for (int i = 0; i < slots.length; i++) {
+                if (slots[i] != null && slots[i] != procesoActual) {
+                    BCP bcp = slots[i];
+                    sb.append("Slot ").append(i).append(": ")
+                      .append(bcp.getNombreArchivo())
+                      .append(" (PID:").append(bcp.getPid()).append(")")
+                      .append(" - ").append(bcp.getEstado()).append("\n");
+                }
+            }
+        }
+
+        if (!hayProcesos) {
+            sb.append("No hay procesos cargados\n");
+        }
+
+        BCP.setText(sb.toString());
+    }
    
    /**
     * Muestra una ventana con las estadísticas en formato tabla
@@ -238,32 +298,56 @@ public class App extends javax.swing.JFrame {
     * Verifica si hay procesos esperando entrada y solicita automáticamente
     */
     private void verificarEntradaPendiente() {
-        System.out.println("DEBUG: Verificando entrada pendiente...");
-        BCP[] procesos = gestor.getProcesosEnEjecucion();
+        System.out.println(" pendiente");
 
+        // Buscar en procesos cargados en slots
+        BCP[] procesos = gestor.getProcesosEnEjecucion();
         for (int cpuID = 0; cpuID < procesos.length; cpuID++) {
             BCP proceso = procesos[cpuID];
-            System.out.println(proceso.isEsperandoEntrada());
             if (proceso != null && proceso.isEsperandoEntrada()) {
-                String prompt = String.format(
-                    "\n[CPU%d] Proceso %s (PID:%d) requiere entrada (0-255): ",
-                    cpuID, proceso.getNombreArchivo(), proceso.getPid()
-                );
-                pantalla.append(prompt);
-                pantalla.setCaretPosition(pantalla.getDocument().getLength());
-                System.out.println("texto");
-                if (inputTeclado != null) {
-                    inputTeclado.setEnabled(true);
-                    inputTeclado.requestFocus();
-                    inputTeclado.setText("");
-                }
-
-                if (Enviar != null) {
-                    Enviar.setEnabled(true);
-                }
-
+                System.out.println("Encontrado en slot " + cpuID);
+                mostrarPromptEntrada(cpuID, proceso);
                 return;
             }
+        }
+
+        // Buscar en cola de espera
+        List<BCP> colaEspera = gestor.getColaEspera();
+        for (BCP proceso : colaEspera) {
+            if (proceso != null && proceso.isEsperandoEntrada()) {
+                int cpuID = proceso.getCpuId();
+                System.out.println("en cola de espera, CPU: " + cpuID);
+                mostrarPromptEntrada(cpuID, proceso);
+                return;
+            }
+        }
+
+    }
+    
+    
+    private void mostrarPromptEntrada(int cpuID, BCP proceso) {
+
+        String prompt = String.format(
+            "\n[CPU%d] Proceso %s (PID:%d) requiere entrada (0-255): ",
+            cpuID, proceso.getNombreArchivo(), proceso.getPid()
+        );
+        pantalla.append(prompt);
+        pantalla.setCaretPosition(pantalla.getDocument().getLength());
+
+        if (inputTeclado != null) {
+            inputTeclado.setEnabled(true);
+            inputTeclado.requestFocus();
+            inputTeclado.setText("");
+            System.out.println(" inputTeclado habilitado");
+        } else {
+            System.out.println(" ERROR - inputTeclado es NULL");
+        }
+
+        if (Enviar != null) {
+            Enviar.setEnabled(true);
+            System.out.println("Enviar habilitado");
+        } else {
+            System.out.println(" - Botón Enviar es NULL");
         }
     }
     
@@ -271,49 +355,72 @@ public class App extends javax.swing.JFrame {
     * Procesa la entrada del JTextField
     */
     private void enviarEntrada() {
+        // Buscar primero en slots de ejecución
         BCP[] procesos = gestor.getProcesosEnEjecucion();
-
         for (int cpuID = 0; cpuID < procesos.length; cpuID++) {
             BCP proceso = procesos[cpuID];
-
             if (proceso != null && proceso.isEsperandoEntrada()) {
-                String input = inputTeclado.getText().trim();
-
-                if (input.isEmpty()) {
-                    pantalla.append("\nError: Debe ingresar un valor\n");
-                    return;
-                }
-
-                try {
-                    int valor = Integer.parseInt(input);
-
-                    if (valor < 0 || valor > 255) {
-                        pantalla.append("\nError: El valor debe estar entre 0 y 255\n");
-                        inputTeclado.setText("");
-                        inputTeclado.requestFocus();
-                        return;
-                    }
-
-                    pantalla.append(valor + "\n");
-                    gestor.procesarEntradaTeclado(cpuID, valor);
-
-                    inputTeclado.setEnabled(false);
-                    inputTeclado.setText("");
-                    Enviar.setEnabled(false);
-
-                    actualizarTablas();
-
-                } catch (NumberFormatException e) {
-                    pantalla.append("\nError: Debe ingresar un número válido\n");
-                    inputTeclado.setText("");
-                    inputTeclado.requestFocus();
-                }
-
+                procesarEntrada(cpuID, proceso);
                 return;
             }
         }
-    }
+
+        // Buscar en cola de espera
+        List<BCP> colaEspera = gestor.getColaEspera();
+        for (BCP proceso : colaEspera) {
+            if (proceso != null && proceso.isEsperandoEntrada()) {
+                int cpuID = proceso.getCpuId();
+                procesarEntrada(cpuID, proceso);
+                return;
+            }
+        }
+
+        // No encontró proceso esperando
+        pantalla.append("\nError: No hay proceso esperando entrada\n");
+    }    
     
+    
+    private void procesarEntrada(int cpuID, BCP proceso) {
+        String input = inputTeclado.getText().trim();
+        System.out.println(" Procesando entrada: " + input);
+
+        if (input.isEmpty()) {
+            pantalla.append("\nError: Debe ingresar un valor\n");
+            return;
+        }
+
+        try {
+            int valor = Integer.parseInt(input);
+
+            if (valor < 0 || valor > 255) {
+                pantalla.append("\nError: El valor debe estar entre 0 y 255\n");
+                inputTeclado.setText("");
+                inputTeclado.requestFocus();
+                return;
+            }
+
+            // Mostrar valor ingresado
+            pantalla.append(valor + "\n");
+
+            // Procesar entrada
+            gestor.procesarEntradaTeclado(cpuID, valor);
+
+            // Deshabilitar entrada
+            inputTeclado.setEnabled(false);
+            inputTeclado.setText("");
+            Enviar.setEnabled(false);
+
+            // Actualizar GUI
+            actualizarTablas();
+
+            System.out.println("DEBUG: Entrada procesada correctamente");
+
+        } catch (NumberFormatException e) {
+            pantalla.append("\nError: Debe ingresar un número válido\n");
+            inputTeclado.setText("");
+            inputTeclado.requestFocus();
+        }
+    }
     
     /**
      * This method is called from within the constructor to initialize the form.
@@ -800,10 +907,6 @@ public class App extends javax.swing.JFrame {
                     .addComponent(jScrollPane6, javax.swing.GroupLayout.PREFERRED_SIZE, 297, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(33, 33, 33)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 252, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(38, 38, 38)
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 266, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 297, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -814,11 +917,15 @@ public class App extends javax.swing.JFrame {
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(Enviar, javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(Enviar)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                 .addComponent(jLabel5)
-                                .addComponent(inputTeclado, javax.swing.GroupLayout.PREFERRED_SIZE, 266, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                                .addComponent(inputTeclado, javax.swing.GroupLayout.PREFERRED_SIZE, 266, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 252, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(38, 38, 38)
+                                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 395, javax.swing.GroupLayout.PREFERRED_SIZE)))))
                 .addGap(365, 365, 365))
         );
         layout.setVerticalGroup(
@@ -1111,7 +1218,7 @@ public class App extends javax.swing.JFrame {
     public javax.swing.JTable memoryTable1;
     public javax.swing.JTextField newMemorySize;
     public javax.swing.JButton nextStep;
-    private javax.swing.JTextArea pantalla;
+    public javax.swing.JTextArea pantalla;
     public javax.swing.JButton setNewMemory;
     public javax.swing.JButton stadistics;
     public javax.swing.JTextField userMemory;
