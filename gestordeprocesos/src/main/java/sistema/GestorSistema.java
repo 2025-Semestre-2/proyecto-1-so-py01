@@ -11,6 +11,7 @@ import instrucciones.Instruccion;
 import instrucciones.InstructionParser;
 import memoria.MemoriaPrincipal;
 import procesos.BCP;
+import sistema.GestorSistema;
 import procesos.Estado;
 import procesos.Planificador;
 import sistema.EstadisticaProceso;
@@ -73,7 +74,7 @@ public class GestorSistema {
         this.estadisticas = new ArrayList<>();
         
         // Crear CPU único
-        this.cpu = new CPU(memoria, planificador, almacenamiento);
+        this.cpu = new CPU(memoria, planificador, almacenamiento, this);
         
         log("Sistema inicializado: 1 CPU con capacidad para " + MAX_PROCESOS_CARGADOS + " procesos (FCFS)");
     }
@@ -114,26 +115,26 @@ public class GestorSistema {
                 programas[i] = leerArchivo(archivos[i]);
                 
                 // Validar sintaxis
-                try {
-                    InstructionParser.parseAll(programas[i]);
-                    log("✓ Archivo validado: " + nombres[i]);
-                } catch (Exception e) {
-                    log("✗ Error de sintaxis en " + nombres[i] + ": " + e.getMessage());
-                    return;
-                }
+//                try {
+//                    InstructionParser.parseAll(programas[i]);
+//                    log("✓ Archivo validado: " + nombres[i]);
+//                } catch (Exception e) {
+//                    log("✗ Error de sintaxis en " + nombres[i] + ": " + e.getMessage());
+//                    return;
+//                }
             }
             
             // Cargar en almacenamiento
             almacenamiento.cargarProgramas(nombres, programas);
             log("Programas cargados en disco");
             
-            // Crear procesos y cargar en memoria
+            // Solo crear BCPs, NO cargar en memoria todavía
             for (String nombre : nombres) {
-                cargarProcesoEnMemoria(nombre);
+                crearBCPSinCargarMemoria(nombre);
             }
             
             // Despachar procesos
-            planificador.despacharProcesos();
+//            planificador.despacharProcesos();
             
             log("Todos los procesos listos para ejecutar");
             
@@ -173,6 +174,31 @@ public class GestorSistema {
     }
     
     /**
+     * Crea un BCP sin cargar el programa en memoria principal
+     * El programa permanece en disco hasta que se ejecute
+     */
+    private void crearBCPSinCargarMemoria(String nombrePrograma) {
+        // Leer programa del disco solo para obtener el tamaño
+        List<String> codigoASM = almacenamiento.leerPrograma(nombrePrograma);
+        if (codigoASM == null) {
+            throw new RuntimeException("Programa no encontrado: " + nombrePrograma);
+        }
+
+        // NO parsear aquí - solo contar líneas
+        int tamanio = codigoASM.size();
+
+        // Crear BCP sin dirección base todavía (se asignará al cargar en memoria)
+        BCP bcp = new BCP(nombrePrograma, -1, tamanio, 1);
+
+        // Agregar a cola de listos
+        planificador.agregarProcesoListo(bcp);
+
+        log("Proceso creado: " + nombrePrograma + " (PID:" + bcp.getPid() + 
+            ") - En disco, no cargado en memoria");
+    }
+    
+    
+    /**
      * Ejecuta UN ciclo de reloj (1 segundo simulado)
      * El CPU ejecuta el primer proceso (FCFS)
      */
@@ -205,28 +231,56 @@ public class GestorSistema {
             log("Ya se está ejecutando");
             return;
         }
-        
+
         ejecutando = true;
-        
+
         hiloEjecucion = new Thread(() -> {
-            log("Iniciando ejecución automática...");
-            
+            log("Iniciando/Reanudando ejecución automática...");
+
             while (ejecutando && !todosProcesosFinalizado()) {
                 ejecutarPasoAPaso();
-                
+
+                // Verificar si hay procesos esperando entrada
+                if (hayProcesoEsperandoEntrada()) {
+                    log("Ejecución pausada: esperando entrada de usuario");
+                    ejecutando = false;
+
+                    // Notificar a la GUI para que verifique entrada pendiente
+                    if (actualizarGUICallback != null) {
+                        actualizarGUICallback.run();
+                    }
+                    break;
+                }
+
                 try {
                     Thread.sleep(1000); // 1 segundo por ciclo
                 } catch (InterruptedException e) {
                     break;
                 }
             }
-            
+
             ejecutando = false;
-            log("Ejecución automática finalizada");
-            mostrarEstadisticas();
+            if (todosProcesosFinalizado()) {
+                log("Ejecución automática finalizada - todos los procesos terminaron");
+                mostrarEstadisticas();
+            }
         });
-        
+
         hiloEjecucion.start();
+    }
+    
+    
+    /**
+    * Verifica si hay algún proceso esperando entrada de teclado
+    */
+    private boolean hayProcesoEsperandoEntrada() {
+        BCP[] procesos = planificador.getProcesosEnEjecucion();
+        for (BCP proceso : procesos) {
+            if (proceso != null && proceso.isEsperandoEntrada()) {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**
@@ -285,45 +339,51 @@ public class GestorSistema {
     }
     
     /**
+    * Verifica si la ejecución se detuvo por espera de entrada
+    */
+    public boolean seDetuvoPorEntrada() {
+        return !ejecutando && hayProcesoEsperandoEntrada();
+    }
+    
+    
+    /**
      * Muestra estadísticas finales
      */
     private void mostrarEstadisticas() {
         log("\n========== ESTADÍSTICAS FINALES ==========");
-        
-        estadisticas.clear();
-        
-        // Recolectar estadísticas de todos los procesos finalizados
-        BCP[] procesosEnSlots = planificador.getProcesosEnEjecucion();
-        for (int i = 0; i < procesosEnSlots.length; i++) {
-            BCP proceso = procesosEnSlots[i];
-            if (proceso != null && proceso.getEstado() == Estado.FINALIZADO) {
-                EstadisticaProceso est = new EstadisticaProceso(
-                    proceso.getNombreArchivo(),
-                    proceso.getPid(),
-                    proceso.getTiempoInicio(),
-                    proceso.getTiempoFinalizacion(),
-                    proceso.getTiempoEmpleado(),
-                    i
-                );
-                estadisticas.add(est);
-            }
-        }
-        
-        // Mostrar en formato tabla
+
         if (!estadisticas.isEmpty()) {
             log(EstadisticaProceso.getEncabezadoTabla());
             log(EstadisticaProceso.getLineaSeparadora());
-            
+
             for (EstadisticaProceso est : estadisticas) {
                 log(est.toStringTabla());
             }
-            
+
             log(EstadisticaProceso.getLineaSeparadora());
         } else {
             log("No hay procesos finalizados para mostrar estadísticas");
         }
-        
+
         log("==========================================\n");
+    }
+    
+    /**
+    * Registra estadística de un proceso finalizado
+    */
+    public void registrarEstadisticaProceso(BCP proceso) {
+        if (proceso.getEstado() == Estado.FINALIZADO) {
+            EstadisticaProceso est = new EstadisticaProceso(
+                proceso.getNombreArchivo(),
+                proceso.getPid(),
+                proceso.getTiempoInicio(),
+                proceso.getTiempoFinalizacion(),
+                proceso.getTiempoEmpleado(),
+                proceso.getCpuId()
+            );
+            estadisticas.add(est);
+            log("Estadística registrada: " + proceso.getNombreArchivo() + " (PID:" + proceso.getPid() + ")");
+        }
     }
     
     /**
@@ -406,6 +466,8 @@ public class GestorSistema {
     public CPU getCPU() {
         return cpu;
     }
+    
+
     
     // ========== SETTERS PARA CALLBACKS ==========
     

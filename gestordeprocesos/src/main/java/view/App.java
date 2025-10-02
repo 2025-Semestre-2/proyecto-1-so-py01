@@ -23,6 +23,7 @@ public class App extends javax.swing.JFrame {
     
     private GestorSistema gestor;
     private javax.swing.Timer timerActualizacion;
+    private boolean archivosYaCargados = false;
 
     /**
      * Creates new form App
@@ -61,6 +62,7 @@ public class App extends javax.swing.JFrame {
     
         gestor.setActualizarGUICallback(() -> {
             actualizarTablas();
+            verificarEntradaPendiente(); // Verificar si hay entrada pendiente
         });
 
 
@@ -412,8 +414,15 @@ public class App extends javax.swing.JFrame {
 
             // Actualizar GUI
             actualizarTablas();
-
+            
+            if (gestor.seDetuvoPorEntrada()) {
+                System.out.println("DEBUG: Reanudando ejecución automática");
+                gestor.ejecutarAutomatico();
+            }
+            
             System.out.println("DEBUG: Entrada procesada correctamente");
+            
+            
 
         } catch (NumberFormatException e) {
             pantalla.append("\nError: Debe ingresar un número válido\n");
@@ -628,6 +637,7 @@ public class App extends javax.swing.JFrame {
 
         jLabel4.setText("Pantalla");
 
+        pantalla.setEditable(false);
         pantalla.setColumns(20);
         pantalla.setRows(5);
         pantalla.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -976,7 +986,7 @@ public class App extends javax.swing.JFrame {
     private void executeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_executeActionPerformed
         // TODO add your handling code here:
         if (gestor.isEjecutando()) {
-            // Si ya está ejecutando, detener
+            // Si ya está ejecutando, detener manualmente
             gestor.detenerEjecucion();
             execute.setText("start");
             nextStep.setEnabled(true);
@@ -985,13 +995,38 @@ public class App extends javax.swing.JFrame {
             // Iniciar ejecución automática
             gestor.ejecutarAutomatico();
             execute.setText("stop");
-            nextStep.setEnabled(false);  // Deshabilitar next step durante ejecución automática
-            loadFile.setEnabled(false);   // No permitir cargar archivos mientras ejecuta
+            nextStep.setEnabled(false);
+            loadFile.setEnabled(false);
+
+            // Timer para verificar si se pausó por entrada
+            javax.swing.Timer verificador = new javax.swing.Timer(500, e -> {
+                if (!gestor.isEjecutando() && gestor.seDetuvoPorEntrada()) {
+                    // Se pausó por entrada, NO cambiar el botón a "start"
+                    // Mantener deshabilitados los otros botones
+                    System.out.println("DEBUG: Ejecución pausada por E/S");
+                } else if (!gestor.isEjecutando()) {
+                    // Terminó normalmente
+                    execute.setText("start");
+                    nextStep.setEnabled(true);
+                    loadFile.setEnabled(true);
+                    ((javax.swing.Timer)e.getSource()).stop();
+                }
+            });
+            verificador.start();
         }
     }//GEN-LAST:event_executeActionPerformed
 
     private void setNewMemoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setNewMemoryActionPerformed
         // TODO add your handling code here:
+        
+        if (archivosYaCargados) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "No se puede reconfigurar la memoria con archivos ya cargados.\nUse el botón 'Clean' primero.",
+                "Advertencia",
+                javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
         try {
             // Leer valores de los campos de texto
             String memoriaStr = newMemorySize.getText().trim();
@@ -1007,7 +1042,7 @@ public class App extends javax.swing.JFrame {
 
             int tamanioTotal = Integer.parseInt(memoriaStr);
             int tamanioSO = Integer.parseInt(soStr);
-
+                
             // Validaciones
             if (tamanioTotal <= 0 || tamanioSO <= 0) {
                 javax.swing.JOptionPane.showMessageDialog(this,
@@ -1016,7 +1051,15 @@ public class App extends javax.swing.JFrame {
                     javax.swing.JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
+            
+            if (tamanioSO < 150) {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "La memoria del SO debe ser mínimo 150 KB",
+                    "Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
             if (tamanioSO >= tamanioTotal) {
                 javax.swing.JOptionPane.showMessageDialog(this,
                     "La memoria del SO no puede ser mayor o igual a la memoria total",
@@ -1066,10 +1109,24 @@ public class App extends javax.swing.JFrame {
 
     private void newMemorySizeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newMemorySizeActionPerformed
         // TODO add your handling code here:
+        if (archivosYaCargados) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "No se puede reconfigurar la memoria con archivos ya cargados.\nUse el botón 'Clean' primero.",
+                "Advertencia",
+                javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
+        }
     }//GEN-LAST:event_newMemorySizeActionPerformed
 
     private void userMemoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_userMemoryActionPerformed
         // TODO add your handling code here:
+        if (archivosYaCargados) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "No se puede reconfigurar la memoria con archivos ya cargados.\nUse el botón 'Clean' primero.",
+                "Advertencia",
+                javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
+        }
     }//GEN-LAST:event_userMemoryActionPerformed
 
     private void cleanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cleanActionPerformed
@@ -1093,6 +1150,8 @@ public class App extends javax.swing.JFrame {
 
             javax.swing.JOptionPane.showMessageDialog(this,"Sistema limpiado correctamente","Información",javax.swing.JOptionPane.INFORMATION_MESSAGE);
         }
+        archivosYaCargados = false;
+        setNewMemory.setEnabled(true);
     }//GEN-LAST:event_cleanActionPerformed
 
     private void loadFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loadFileActionPerformed
@@ -1146,6 +1205,8 @@ public class App extends javax.swing.JFrame {
                 e.printStackTrace();
             }
         }
+        archivosYaCargados = true;
+        setNewMemory.setEnabled(false);
     }//GEN-LAST:event_loadFileActionPerformed
 
     private void nextStepActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextStepActionPerformed
