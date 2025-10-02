@@ -211,13 +211,13 @@ public class App extends javax.swing.JFrame {
                     sb.append("  CX = ").append(bcp.getCx()).append("\n");
                     sb.append("  DX = ").append(bcp.getDx()).append("\n\n");
 
-//                    sb.append("PILA: ").append(bcp.getPila()).append("\n");
-//                    sb.append("Tamaño: ").append(bcp.getPila().size()).append("/5\n\n");
-//
-//                    sb.append("MEMORIA:\n");
-//                    sb.append("  Base: ").append(bcp.getDireccionBase()).append("\n");
-//                    sb.append("  Tamaño: ").append(bcp.getTamanio()).append("\n");
-//                    sb.append("  Prioridad: ").append(bcp.getPrioridad()).append("\n\n");
+                    sb.append("PILA: ").append(bcp.getPila()).append("\n");
+                    sb.append("Tamaño: ").append(bcp.getPila().size()).append("/5\n\n");
+
+                    sb.append("MEMORIA:\n");
+                    sb.append("  Base: ").append(bcp.getDireccionBase()).append("\n");
+                    sb.append("  Tamaño: ").append(bcp.getTamanio()).append("\n");
+                    sb.append("  Prioridad: ").append(bcp.getPrioridad()).append("\n\n");
                 }
             }
         }
