@@ -45,6 +45,14 @@ public class Planificador {
         // FCFS: Solo un proceso a la vez en ejecución
         if (procesosEnEjecucion[0] == null && !colaListos.isEmpty()) {
             BCP proceso = colaListos.poll();
+
+            // Verificar si el proceso ya está cargado en memoria
+            if (proceso.getDireccionBase() == -1) {
+                // Proceso no está en memoria, necesita cargarse
+                System.out.println("Proceso " + proceso.getPid() + " necesita cargarse a memoria");
+                // Aquí se cargará en el siguiente paso
+            }
+
             procesosEnEjecucion[0] = proceso;
             proceso.setEstado(Estado.EJECUCION);
             proceso.setCpuID(0);

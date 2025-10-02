@@ -7,6 +7,7 @@ package cpu;
 import almacenamiento.UnidadDeAlmacenamiento;
 import instrucciones.IR;
 import instrucciones.Instruccion;
+import instrucciones.InstructionParser;
 import instrucciones.Opcode;
 import memoria.MemoriaPrincipal;
 import procesos.BCP;
@@ -14,6 +15,7 @@ import procesos.Estado;
 import procesos.Planificador;
 import java.util.List;
 import java.util.function.Consumer;
+import sistema.GestorSistema;
 
 /**
  * CPU único que ejecuta instrucciones de los procesos usando FCFS
@@ -37,12 +39,14 @@ public class CPU {
     
     // Bandera de comparación (para JE/JNE)
     private boolean flagIgualdad = false;
+    private GestorSistema gestorReferencia;
     
     public CPU(MemoriaPrincipal memoria, Planificador planificador, 
-               UnidadDeAlmacenamiento almacenamiento) {
+               UnidadDeAlmacenamiento almacenamiento, GestorSistema gestor) {
         this.memoria = memoria;
         this.planificador = planificador;
         this.almacenamiento = almacenamiento;
+        this.gestorReferencia = gestor;
         this.registrosIR = new IR[MAX_PROCESOS_SIMULTANEOS];
     }
     
@@ -57,6 +61,19 @@ public class CPU {
         
         if (proceso == null) {
             return false; // No hay proceso para ejecutar
+        }
+        
+        
+        // Si el proceso no está cargado en memoria, cargarlo ahora
+        if (proceso.getDireccionBase() == -1) {
+            log("Cargando proceso " + proceso.getPid() + " del disco a memoria...");
+            cargarProcesoEnMemoria(proceso);
+
+            // Verificar si el proceso fue marcado como finalizado (error de sintaxis)
+            if (proceso.getEstado() == Estado.FINALIZADO) {
+                log("Proceso " + proceso.getPid() + " no se pudo cargar, pasando al siguiente");
+                return false; // No ejecutar este proceso
+            }
         }
         
         // Si está esperando entrada, no ejecutar
@@ -94,6 +111,59 @@ public class CPU {
             return false;
         }
     }
+    
+    
+    /**
+    * Carga un proceso del disco a la memoria principal
+    */
+    private void cargarProcesoEnMemoria(BCP proceso) {
+        try {
+            // Leer programa del disco
+            List<String> codigoASM = almacenamiento.leerPrograma(proceso.getNombreArchivo());
+            if (codigoASM == null) {
+                throw new RuntimeException("Programa no encontrado en disco: " + proceso.getNombreArchivo());
+            }
+
+            // VALIDAR sintaxis ANTES de cargar
+            List<Instruccion> instrucciones;
+            try {
+                instrucciones = InstructionParser.parseAll(codigoASM);
+            } catch (Exception e) {
+                // Error de sintaxis - reportar y NO cargar
+                log("ERROR: Proceso " + proceso.getPid() + " (" + proceso.getNombreArchivo() + 
+                    ") tiene error de sintaxis: " + e.getMessage());
+                imprimirPantalla("✗ ERROR: Proceso " + proceso.getPid() + " (" + 
+                               proceso.getNombreArchivo() + ") no se puede ejecutar.\n" +
+                               "  Motivo: " + e.getMessage() + "\n");
+
+                // Marcar proceso como finalizado con error
+                proceso.cambiarEstado(Estado.FINALIZADO);
+                planificador.finalizarProceso(proceso.getCpuId());
+                return;
+            }
+
+            // Si pasa la validación, cargar en memoria
+            int direccionBase = memoria.cargarProgramaUsuario(instrucciones);
+
+            // Actualizar BCP con dirección base y PC
+            proceso.setDireccionBase(direccionBase);
+            proceso.setProgramCounter(direccionBase);
+
+            // Cargar BCP en memoria SO
+            int direccionBCP = memoria.cargarBCP(proceso);
+
+            // Configurar el BCP para que actualice memoria automáticamente
+            proceso.setDireccionBCPEnMemoria(direccionBCP);
+            proceso.setMemoriaReferencia(memoria);
+            log("Proceso " + proceso.getPid() + " cargado en memoria: Base=" + direccionBase + ", BCP@" + direccionBCP);
+
+        } catch (Exception e) {
+            log("ERROR al cargar proceso en memoria: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error cargando proceso en memoria", e);
+        }
+    }
+    
     
     /**
      * Obtiene el proceso actual en ejecución (primer proceso de los 5 slots)
@@ -234,9 +304,14 @@ public class CPU {
         switch (codigo.toUpperCase()) {
             case "20H":
                 // Finalizar programa
-                planificador.finalizarProceso(bcp.getCpuId());
                 bcp.cambiarEstado(Estado.FINALIZADO);
+                planificador.finalizarProceso(bcp.getCpuId());
                 log("Proceso " + bcp.getPid() + " finalizado");
+
+                // Registrar estadística
+                if (gestorReferencia != null) {
+                    gestorReferencia.registrarEstadisticaProceso(bcp);
+                }
                 break;
                 
             case "10H":

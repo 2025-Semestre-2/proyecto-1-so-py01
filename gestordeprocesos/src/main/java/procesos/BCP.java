@@ -3,6 +3,7 @@ package procesos;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+import memoria.MemoriaPrincipal;
 
 /**
  * 
@@ -37,6 +38,11 @@ public class BCP {
     // Memoria
     private int direccionBase;
     private int tamanio;
+    // Dirección donde está guardado este BCP en memoria SO
+    private int direccionBCPEnMemoria = -1;
+
+    // Referencia a la memoria principal (para poder actualizarla)
+    private MemoriaPrincipal memoriaReferencia = null;
 
     // Prioridad
     private int prioridad;
@@ -162,9 +168,25 @@ public class BCP {
                 direccionBase, prioridad,
                 archivosAbiertos, esperandoEntrada);
     }
+    
+    
 
     // getters - setters
     public Estado getEstado() { return estado; }
+    public void setDireccionBase(int direccionBase) {
+        this.direccionBase = direccionBase;
+    }
+    public int getDireccionBCPEnMemoria() {
+        return direccionBCPEnMemoria;
+    }
+
+    public void setDireccionBCPEnMemoria(int direccion) {
+        this.direccionBCPEnMemoria = direccion;
+    }
+
+    public void setMemoriaReferencia(MemoriaPrincipal memoria) {
+        this.memoriaReferencia = memoria;
+    }
     public int getProgramCounter() { return programCounter; }
     public int getAc() { return ac; }
     public int getAx() { return ax; }
@@ -187,11 +209,43 @@ public class BCP {
     public Stack<Integer> getPila() { return (Stack<Integer>) pila.clone(); }
 
     public void setEstado(Estado estado) { this.estado = estado; }
-    public void setAc(int ac) { this.ac = ac; }
-    public void setAx(int ax) { this.ax = ax; }
-    public void setBx(int bx) { this.bx = bx; }
-    public void setCx(int cx) { this.cx = cx; }
-    public void setDx(int dx) { this.dx = dx; }
+    public void setAc(int ac) {
+        this.ac = ac;
+        actualizarEnMemoria(2, ac); // Offset 2 = AC
+    }
+
+    public void setAx(int ax) {
+        this.ax = ax;
+        actualizarEnMemoria(3, ax); // Offset 3 = AX
+    }
+
+    public void setBx(int bx) {
+        this.bx = bx;
+        actualizarEnMemoria(4, bx); // Offset 4 = BX
+    }
+
+    public void setCx(int cx) {
+        this.cx = cx;
+        actualizarEnMemoria(5, cx); // Offset 5 = CX
+    }
+
+    public void setDx(int dx) {
+        this.dx = dx;
+        actualizarEnMemoria(6, dx); // Offset 6 = DX
+    }
+
+    /**
+     * Actualiza un valor del BCP en la memoria principal
+     */
+    private void actualizarEnMemoria(int offset, int valor) {
+        if (memoriaReferencia != null && direccionBCPEnMemoria != -1) {
+            try {
+                memoriaReferencia.actualizarAtributoBCP(direccionBCPEnMemoria, offset, valor);
+            } catch (Exception e) {
+                // Ignorar si falla (por ejemplo, si aún no está cargado)
+            }
+        }
+    }
     public void setCpuID(int cpuID) { this.cpuID = cpuID; }
     public void setSiguiente(int dirSiguienteBCP) { this.dirSiguienteBCP = dirSiguienteBCP; }
     public void setInstruccionActual(String instruccionActual) { this.instruccionActual = instruccionActual; }
