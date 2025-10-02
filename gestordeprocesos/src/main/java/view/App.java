@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 package view;
 
 import java.io.File;
@@ -9,9 +5,6 @@ import java.util.List;
 import procesos.BCP;
 import sistema.EstadisticaProceso;
 import sistema.GestorSistema;
-import procesos.Estado;
-import java.util.Set;
-import java.util.HashSet;
 
 /**
  *
@@ -31,6 +24,7 @@ public class App extends javax.swing.JFrame {
     public App() {
         initComponents();
         inicializarSistema();
+        ocultar.setVisible(false);
         
     }
     
@@ -442,7 +436,6 @@ public class App extends javax.swing.JFrame {
 
         execute = new javax.swing.JButton();
         nextStep = new javax.swing.JButton();
-        setNewMemory = new javax.swing.JButton();
         stadistics = new javax.swing.JButton();
         loadFile = new javax.swing.JButton();
         jScrollPane4 = new javax.swing.JScrollPane();
@@ -450,10 +443,6 @@ public class App extends javax.swing.JFrame {
         jScrollPane1 = new javax.swing.JScrollPane();
         BCP = new javax.swing.JTextArea();
         jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        newMemorySize = new javax.swing.JTextField();
-        jLabel3 = new javax.swing.JLabel();
-        userMemory = new javax.swing.JTextField();
         jLabel4 = new javax.swing.JLabel();
         jScrollPane2 = new javax.swing.JScrollPane();
         pantalla = new javax.swing.JTextArea();
@@ -465,6 +454,12 @@ public class App extends javax.swing.JFrame {
         Enviar = new javax.swing.JButton();
         inputTeclado = new javax.swing.JTextField();
         jLabel5 = new javax.swing.JLabel();
+        ocultar = new javax.swing.JPanel();
+        newMemorySize = new javax.swing.JTextField();
+        userMemory = new javax.swing.JTextField();
+        setNewMemory = new javax.swing.JButton();
+        jLabel3 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -479,13 +474,6 @@ public class App extends javax.swing.JFrame {
         nextStep.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 nextStepActionPerformed(evt);
-            }
-        });
-
-        setNewMemory.setText("set");
-        setNewMemory.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                setNewMemoryActionPerformed(evt);
             }
         });
 
@@ -618,22 +606,6 @@ public class App extends javax.swing.JFrame {
         jScrollPane1.setViewportView(BCP);
 
         jLabel1.setText("BCP");
-
-        jLabel2.setText("Memory size");
-
-        newMemorySize.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                newMemorySizeActionPerformed(evt);
-            }
-        });
-
-        jLabel3.setText("S.O memory");
-
-        userMemory.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                userMemoryActionPerformed(evt);
-            }
-        });
 
         jLabel4.setText("Pantalla");
 
@@ -881,35 +853,69 @@ public class App extends javax.swing.JFrame {
 
         jLabel5.setText("Teclado");
 
+        ocultar.setForeground(new java.awt.Color(242, 242, 242));
+
+        newMemorySize.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                newMemorySizeActionPerformed(evt);
+            }
+        });
+
+        userMemory.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                userMemoryActionPerformed(evt);
+            }
+        });
+
+        setNewMemory.setText("set");
+        setNewMemory.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                setNewMemoryActionPerformed(evt);
+            }
+        });
+
+        jLabel3.setText("S.O memory");
+
+        jLabel2.setText("Memory size");
+
+        javax.swing.GroupLayout ocultarLayout = new javax.swing.GroupLayout(ocultar);
+        ocultar.setLayout(ocultarLayout);
+        ocultarLayout.setHorizontalGroup(
+            ocultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(ocultarLayout.createSequentialGroup()
+                .addContainerGap(13, Short.MAX_VALUE)
+                .addGroup(ocultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, ocultarLayout.createSequentialGroup()
+                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 79, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(newMemorySize, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, ocultarLayout.createSequentialGroup()
+                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 79, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(userMemory, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(setNewMemory, javax.swing.GroupLayout.Alignment.TRAILING))
+                .addContainerGap())
+        );
+        ocultarLayout.setVerticalGroup(
+            ocultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(ocultarLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(ocultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(newMemorySize, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel3))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(ocultarLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(userMemory, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel2))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(setNewMemory)
+                .addContainerGap(15, Short.MAX_VALUE))
+        );
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(16, 16, 16)
-                .addComponent(execute)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(nextStep)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(clean, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(stadistics)
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 79, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 79, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(newMemorySize, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(userMemory, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(loadFile, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(setNewMemory)
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addGap(571, 571, 571))
             .addGroup(layout.createSequentialGroup()
                 .addGap(34, 34, 34)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -917,14 +923,6 @@ public class App extends javax.swing.JFrame {
                     .addComponent(jScrollPane6, javax.swing.GroupLayout.PREFERRED_SIZE, 297, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(33, 33, 33)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 297, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(253, 253, 253)
-                                .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -935,30 +933,48 @@ public class App extends javax.swing.JFrame {
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 252, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(38, 38, 38)
-                                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 395, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 395, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(253, 253, 253)
+                                .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 297, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addGap(365, 365, 365))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                .addGap(16, 16, 16)
+                .addComponent(execute)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(nextStep)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(clean, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(stadistics)
+                .addGap(63, 63, 63)
+                .addComponent(ocultar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(loadFile, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(571, 571, 571))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(loadFile, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(execute)
-                            .addComponent(nextStep)
-                            .addComponent(stadistics)
-                            .addComponent(jLabel2)
-                            .addComponent(newMemorySize, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(clean))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel3)
-                            .addComponent(userMemory, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(setNewMemory)
-                .addGap(29, 29, 29)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(loadFile, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(execute)
+                                .addComponent(nextStep)
+                                .addComponent(stadistics)
+                                .addComponent(clean)))
+                        .addGap(78, 78, 78))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(ocultar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -977,7 +993,7 @@ public class App extends javax.swing.JFrame {
                 .addComponent(inputTeclado, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(Enviar)
-                .addContainerGap(75, Short.MAX_VALUE))
+                .addContainerGap(78, Short.MAX_VALUE))
         );
 
         pack();
@@ -1016,83 +1032,6 @@ public class App extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_executeActionPerformed
 
-    private void setNewMemoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setNewMemoryActionPerformed
-        // TODO add your handling code here:
-        
-        if (archivosYaCargados) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                "No se puede reconfigurar la memoria con archivos ya cargados.\nUse el botón 'Clean' primero.",
-                "Advertencia",
-                javax.swing.JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        try {
-            // Leer valores de los campos de texto
-            String memoriaStr = newMemorySize.getText().trim();
-            String soStr = userMemory.getText().trim();
-
-            if (memoriaStr.isEmpty() || soStr.isEmpty()) {
-                javax.swing.JOptionPane.showMessageDialog(this,
-                    "Por favor ingrese ambos valores",
-                    "Advertencia",
-                    javax.swing.JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            int tamanioTotal = Integer.parseInt(memoriaStr);
-            int tamanioSO = Integer.parseInt(soStr);
-                
-            // Validaciones
-            if (tamanioTotal <= 0 || tamanioSO <= 0) {
-                javax.swing.JOptionPane.showMessageDialog(this,
-                    "Los valores deben ser positivos",
-                    "Error",
-                    javax.swing.JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            if (tamanioSO < 150) {
-                javax.swing.JOptionPane.showMessageDialog(this,
-                    "La memoria del SO debe ser mínimo 150 KB",
-                    "Error",
-                    javax.swing.JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            if (tamanioSO >= tamanioTotal) {
-                javax.swing.JOptionPane.showMessageDialog(this,
-                    "La memoria del SO no puede ser mayor o igual a la memoria total",
-                    "Error",
-                    javax.swing.JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Reconfigurar memoria
-            gestor.reconfigurarMemoria(tamanioTotal, tamanioSO);
-
-            // Actualizar tablas
-            actualizarTablas();
-
-            javax.swing.JOptionPane.showMessageDialog(this,
-                "Memoria reconfigurada correctamente\nTotal: " + tamanioTotal + 
-                " KB\nSO: " + tamanioSO + " KB\nUsuario: " + (tamanioTotal - tamanioSO) + " KB",
-                "Éxito",
-                javax.swing.JOptionPane.INFORMATION_MESSAGE);
-
-        } catch (NumberFormatException e) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                "Por favor ingrese valores numéricos válidos",
-                "Error",
-                javax.swing.JOptionPane.ERROR_MESSAGE);
-        } catch (Exception e) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                "Error al reconfigurar memoria:\n" + e.getMessage(),
-                "Error",
-                javax.swing.JOptionPane.ERROR_MESSAGE);
-        }
-    }//GEN-LAST:event_setNewMemoryActionPerformed
-
     private void stadisticsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stadisticsActionPerformed
         // TODO add your handling code here:
         List<EstadisticaProceso> estadisticas = gestor.getEstadisticas();
@@ -1106,28 +1045,6 @@ public class App extends javax.swing.JFrame {
         // Crear ventana de estadísticas
         mostrarVentanaEstadisticas(estadisticas);
     }//GEN-LAST:event_stadisticsActionPerformed
-
-    private void newMemorySizeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newMemorySizeActionPerformed
-        // TODO add your handling code here:
-        if (archivosYaCargados) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                "No se puede reconfigurar la memoria con archivos ya cargados.\nUse el botón 'Clean' primero.",
-                "Advertencia",
-                javax.swing.JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-    }//GEN-LAST:event_newMemorySizeActionPerformed
-
-    private void userMemoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_userMemoryActionPerformed
-        // TODO add your handling code here:
-        if (archivosYaCargados) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                "No se puede reconfigurar la memoria con archivos ya cargados.\nUse el botón 'Clean' primero.",
-                "Advertencia",
-                javax.swing.JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-    }//GEN-LAST:event_userMemoryActionPerformed
 
     private void cleanActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cleanActionPerformed
         // TODO add your handling code here:
@@ -1232,6 +1149,105 @@ public class App extends javax.swing.JFrame {
         enviarEntrada();
     }//GEN-LAST:event_EnviarActionPerformed
 
+    private void newMemorySizeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newMemorySizeActionPerformed
+        // TODO add your handling code here:
+        if (archivosYaCargados) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "No se puede reconfigurar la memoria con archivos ya cargados.\nUse el botón 'Clean' primero.",
+                "Advertencia",
+                javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+    }//GEN-LAST:event_newMemorySizeActionPerformed
+
+    private void userMemoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_userMemoryActionPerformed
+        // TODO add your handling code here:
+        if (archivosYaCargados) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "No se puede reconfigurar la memoria con archivos ya cargados.\nUse el botón 'Clean' primero.",
+                "Advertencia",
+                javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+    }//GEN-LAST:event_userMemoryActionPerformed
+
+    private void setNewMemoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setNewMemoryActionPerformed
+        // TODO add your handling code here:
+
+        if (archivosYaCargados) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "No se puede reconfigurar la memoria con archivos ya cargados.\nUse el botón 'Clean' primero.",
+                "Advertencia",
+                javax.swing.JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            // Leer valores de los campos de texto
+            String memoriaStr = newMemorySize.getText().trim();
+            String soStr = userMemory.getText().trim();
+
+            if (memoriaStr.isEmpty() || soStr.isEmpty()) {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "Por favor ingrese ambos valores",
+                    "Advertencia",
+                    javax.swing.JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            int tamanioTotal = Integer.parseInt(memoriaStr);
+            int tamanioSO = Integer.parseInt(soStr);
+
+            // Validaciones
+            if (tamanioTotal <= 0 || tamanioSO <= 0) {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "Los valores deben ser positivos",
+                    "Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (tamanioSO < 150) {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "La memoria del SO debe ser mínimo 150 KB",
+                    "Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (tamanioSO >= tamanioTotal) {
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "La memoria del SO no puede ser mayor o igual a la memoria total",
+                    "Error",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Reconfigurar memoria
+            gestor.reconfigurarMemoria(tamanioTotal, tamanioSO);
+
+            // Actualizar tablas
+            actualizarTablas();
+
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "Memoria reconfigurada correctamente\nTotal: " + tamanioTotal +
+                " KB\nSO: " + tamanioSO + " KB\nUsuario: " + (tamanioTotal - tamanioSO) + " KB",
+                "Éxito",
+                javax.swing.JOptionPane.INFORMATION_MESSAGE);
+
+        } catch (NumberFormatException e) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "Por favor ingrese valores numéricos válidos",
+                "Error",
+                javax.swing.JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "Error al reconfigurar memoria:\n" + e.getMessage(),
+                "Error",
+                javax.swing.JOptionPane.ERROR_MESSAGE);
+        }
+    }//GEN-LAST:event_setNewMemoryActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -1277,11 +1293,12 @@ public class App extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane6;
     public javax.swing.JButton loadFile;
     public javax.swing.JTable memoryTable1;
-    public javax.swing.JTextField newMemorySize;
+    private javax.swing.JTextField newMemorySize;
     public javax.swing.JButton nextStep;
+    private javax.swing.JPanel ocultar;
     public javax.swing.JTextArea pantalla;
-    public javax.swing.JButton setNewMemory;
+    private javax.swing.JButton setNewMemory;
     public javax.swing.JButton stadistics;
-    public javax.swing.JTextField userMemory;
+    private javax.swing.JTextField userMemory;
     // End of variables declaration//GEN-END:variables
 }

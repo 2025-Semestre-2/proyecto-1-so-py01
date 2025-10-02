@@ -1,8 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-
 package sistema;
 
 import almacenamiento.UnidadDeAlmacenamiento;
@@ -11,10 +6,8 @@ import instrucciones.Instruccion;
 import instrucciones.InstructionParser;
 import memoria.MemoriaPrincipal;
 import procesos.BCP;
-import sistema.GestorSistema;
 import procesos.Estado;
 import procesos.Planificador;
-import sistema.EstadisticaProceso;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -54,7 +47,12 @@ public class GestorSistema {
      * Constructor con configuración por defecto
      */
     public GestorSistema() {
-        this(512, 412, 512, 64);
+        int tamanioMemoria = 512;
+        int tamanioSO = 150;
+        int tamanioAlmacenamiento = 512;
+        int memoriaVirtual = 45;
+
+        inicializarSistema(tamanioMemoria, tamanioSO, tamanioAlmacenamiento, memoriaVirtual);
     }
     
     /**
