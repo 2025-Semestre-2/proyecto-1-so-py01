@@ -249,7 +249,7 @@ public class CPU {
                 // Entrada de teclado (guardar en DX)
                 bcp.setEsperandoEntrada(true);
                 planificador.agregarProcesoEspera(bcp);
-                planificador.liberarCPU(bcp.getCpuId());
+//                planificador.liberarCPU(bcp.getCpuId());
                 log("Proceso " + bcp.getPid() + " esperando entrada de teclado");
                 break;
                 
@@ -383,7 +383,8 @@ public class CPU {
         if (proceso != null && proceso.isEsperandoEntrada()) {
             proceso.setDx(valor);
             proceso.setEsperandoEntrada(false);
-            planificador.moverEsperaAListos(proceso);
+            proceso.cambiarEstado(Estado.EJECUCION);
+//            planificador.moverEsperaAListos(proceso);
             log("Proceso " + proceso.getPid() + " recibió entrada: " + valor);
         } else {
             log("ERROR: No se encontró proceso esperando entrada en slot " + cpuSlot);
